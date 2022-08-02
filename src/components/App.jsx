@@ -7,6 +7,8 @@ import { ImageGallery } from 'components/ImageGalery/ImageGallery';
 import { Button } from 'components/Button/Button';
 import { Modal } from 'components/Modal/Modal';
 
+import { Element, Events, scroller } from 'react-scroll';
+
 import css from 'components/App.module.css';
 
 export const App = () => {
@@ -18,6 +20,23 @@ export const App = () => {
   const [buttonVisible, setButtonVisible] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalUrl, setModalUrl] = useState('');
+
+  useEffect(() => {
+    Events.scrollEvent.register('begin', function () {
+      console.log('begin', arguments);
+    });
+
+    Events.scrollEvent.register('end', function () {
+      console.log('end', arguments);
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      Events.scrollEvent.remove('begin');
+      Events.scrollEvent.remove('end');
+    };
+  });
 
   useEffect(() => {
     if (searchQuery === '') {
@@ -35,6 +54,14 @@ export const App = () => {
         setStatus('rejected');
       });
   }, [page, searchQuery]);
+
+  const scrollTo = () => {
+    scroller.scrollTo('scroll-to-element', {
+      duration: 1500,
+      delay: 0,
+      smooth: 'easeInOutQuart',
+    });
+  };
 
   const handleFormSubmit = value => {
     if (searchQuery !== value) {
@@ -81,7 +108,10 @@ export const App = () => {
       return (
         <div className={css.App}>
           <Searchbar onSubmit={handleFormSubmit} />
+          <ImageGallery items={items} onClick={handleImgClick} />
           <Loader />
+          {showModal && <Modal onClose={handleModalToggle} url={modalUrl} />}
+
           <ToastContainer
             position="top-right"
             autoClose={2000}
@@ -118,7 +148,12 @@ export const App = () => {
         <div className={css.App}>
           <Searchbar onSubmit={handleFormSubmit} />
           <ImageGallery items={items} onClick={handleImgClick} />
-          {buttonVisible && <Button onClick={handleButtonClick} />}
+          {buttonVisible && (
+            <div onClick={() => scrollTo()}>
+              <Button onClick={handleButtonClick} />
+              <Element className="element" name="scroll-to-element" />
+            </div>
+          )}
           {showModal && <Modal onClose={handleModalToggle} url={modalUrl} />}
           <ToastContainer
             position="top-right"
@@ -137,150 +172,3 @@ export const App = () => {
       return;
   }
 };
-
-// export class App extends Component {
-//   state = {
-//     searchQuery: '',
-//     page: 1,
-//     items: [],
-//     error: '',
-//     status: 'idle',
-//     buttonVisible: false,
-//     showModal: false,
-//     modalUrl: '',
-//   };
-
-//   componentDidUpdate(_, prevState) {
-//     if (
-//       prevState.searchQuery !== this.state.searchQuery ||
-//       prevState.page !== this.state.page
-//     ) {
-//       this.setState({ status: 'pending' });
-//       fetchItems(this.state.searchQuery, this.state.page)
-//         .then(({ items, buttonVisible }) => {
-//           const oldItems = this.state.items;
-//           const newItems = [...oldItems, ...items];
-//           this.setState({ items: newItems, status: 'resolved', buttonVisible });
-//         })
-//         .catch(error =>
-//           this.setState({ error: error.message, status: 'rejected' })
-//         );
-//     }
-//   }
-
-//   handleFormSubmit = value => {
-//     if (this.state.searchQuery !== value) {
-//       this.setState({
-//         searchQuery: value,
-//         page: 1,
-//         buttonVisible: false,
-//         items: [],
-//       });
-//     }
-//   };
-
-//   handleButtonClick = () => {
-//     this.setState(prevState => ({
-//       page: prevState.page + 1,
-//     }));
-//   };
-
-//   handleModalToggle = () => {
-//     this.setState(({ showModal }) => ({ showModal: !showModal }));
-//   };
-
-//   handleImgClick = url => {
-//     this.setState({
-//       modalUrl: url,
-//       showModal: true,
-//     });
-//   };
-
-//   render() {
-//     if (this.state.status === 'idle') {
-//       return (
-//         <div className={css.App}>
-//           <Searchbar onSubmit={this.handleFormSubmit} />
-//           <h1 className={css.Title}>Enter query</h1>
-//           <ToastContainer
-//             position="top-right"
-//             autoClose={2000}
-//             hideProgressBar
-//             newestOnTop={false}
-//             closeOnClick
-//             rtl={false}
-//             pauseOnFocusLoss
-//             draggable
-//             pauseOnHover
-//           />
-//         </div>
-//       );
-//     }
-//     if (this.state.status === 'pending') {
-//       return (
-//         <div className={css.App}>
-//           <Searchbar onSubmit={this.handleFormSubmit} />
-//           <Loader />
-//           <ToastContainer
-//             position="top-right"
-//             autoClose={2000}
-//             hideProgressBar
-//             newestOnTop={false}
-//             closeOnClick
-//             rtl={false}
-//             pauseOnFocusLoss
-//             draggable
-//             pauseOnHover
-//           />
-//         </div>
-//       );
-//     }
-//     if (this.state.status === 'rejected') {
-//       return (
-//         <div className={css.App}>
-//           <Searchbar onSubmit={this.handleFormSubmit} />
-//           <h1 className={css.Title}>{this.state.error}</h1>
-//           <ToastContainer
-//             position="top-right"
-//             autoClose={2000}
-//             hideProgressBar
-//             newestOnTop={false}
-//             closeOnClick
-//             rtl={false}
-//             pauseOnFocusLoss
-//             draggable
-//             pauseOnHover
-//           />
-//         </div>
-//       );
-//     }
-//     if (this.state.status === 'resolved') {
-//       return (
-//         <div className={css.App}>
-//           <Searchbar onSubmit={this.handleFormSubmit} />
-//           <ImageGallery
-//             items={this.state.items}
-//             onClick={this.handleImgClick}
-//           />
-//           {this.state.buttonVisible && (
-//             <Button onClick={this.handleButtonClick} />
-//           )}
-//           {this.state.showModal && (
-//             <Modal onClose={this.handleModalToggle} url={this.state.modalUrl} />
-//           )}
-//           <ToastContainer
-//             position="top-right"
-//             autoClose={2000}
-//             hideProgressBar
-//             newestOnTop={false}
-//             closeOnClick
-//             rtl={false}
-//             pauseOnFocusLoss
-//             draggable
-//             pauseOnHover
-//           />
-//         </div>
-//       );
-//     }
-//   }
-// }
